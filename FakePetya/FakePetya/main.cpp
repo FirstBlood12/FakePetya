@@ -166,7 +166,7 @@ void evil()
 	}
 	else if(info.PartitionStyle == PARTITION_STYLE_GPT)
 	{
-		char gpt[16896];
+		char gpt[512];
 		char firstLBA[512]; //FIRST LBA
 		uint8_t backup_lba[8]; //LAST LBA
 
