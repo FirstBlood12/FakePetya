@@ -11,7 +11,6 @@ uint64_t uint8to64(uint8_t fouruint8[8]) {
 
 void hard_reboot() 
 {
-
 	HANDLE hProc;
 	HANDLE TokenHandle;
 	TOKEN_PRIVILEGES NewState;
